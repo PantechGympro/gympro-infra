@@ -23,10 +23,15 @@ jobs:
               print(f'{f}: OK')
           "
 
+      - name: Crear placeholders de los repos hermanos (solo para esta validación)
+        # docker compose config SÍ necesita leer el env_file aunque no construya
+        # imágenes — en un checkout de un solo repo, ../gympro-api no existe.
+        run: mkdir -p ../gympro-api && touch ../gympro-api/.env.example
+
       - name: Validar fusión de compose (dev)
         # No construye imágenes (los contexts ../gympro-api y ../gympro-web no
-        # existen en este checkout de un solo repo) — solo valida que la
-        # estructura combinada sea válida.
+        # existen realmente en este checkout) — solo valida que la estructura
+        # combinada sea válida, con un .env.example vacío como placeholder.
         run: docker compose -f docker-compose.yml -f docker-compose.override.yml config --quiet
 
       - name: Validar fusión de compose (server/prod)
