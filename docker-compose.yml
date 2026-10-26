@@ -130,7 +130,6 @@ services:
       POSTGRES_USER:      ${POSTGRES_USER:-gymuser}
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD:-gympassword}
       POSTGRES_DB:        ${POSTGRES_DB:-gymprodb}
-      SPARK_ENABLED:      "true"
       PYTHONUNBUFFERED:   "1"
       OLLAMA_BASE_URL:    http://ollama:11434
       OLLAMA_MODEL:       ${OLLAMA_MODEL:-phi3:mini}

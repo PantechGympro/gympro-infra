@@ -48,8 +48,6 @@ services:
   api:
     mem_limit: 1536m
     environment:
-      # SPARK_ENABLED ya no aplica (IA migrada a scikit-learn) → desactivado.
-      SPARK_ENABLED: "false"
       # Gunicorn: 2 workers gthread × 4 threads (ver entrypoint.sh).
       WEB_CONCURRENCY: "2"
       GUNICORN_THREADS: "4"
