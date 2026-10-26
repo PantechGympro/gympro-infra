@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar sintaxis YAML de los compose
+        run: |
+          python3 -c "
+          import yaml, sys
+          files = ['docker-compose.yml', 'docker-compose.override.yml', 'docker-compose.prod.yml', 'docker-compose.server.yml']
+          for f in files:
+              with open(f) as fh:
+                  yaml.safe_load(fh)
+              print(f'{f}: OK')
+          "
+
+      - name: Validar fusión de compose (dev)
+        # No construye imágenes (los contexts ../gympro-api y ../gympro-web no
+        # existen en este checkout de un solo repo) — solo valida que la
+        # estructura combinada sea válida.
+        run: docker compose -f docker-compose.yml -f docker-compose.override.yml config --quiet
+
+      - name: Validar fusión de compose (server/prod)
+        run: docker compose -f docker-compose.server.yml config --quiet

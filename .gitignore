@@ -1,0 +1,18 @@
+# Backups y subidas generadas en tiempo de ejecución — Docker Compose las
+# monta como volumen (./backups y ./uploads); solo se versiona el placeholder
+# para que la carpeta exista al clonar.
+/backups/*
+!/backups/.gitkeep
+/uploads/*
+!/uploads/.gitkeep
+
+# Variables de entorno reales (si algún día se agrega un .env propio de infra)
+.env
+.env.*
+!.env.example
+
+# IDEs y Sistema Operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -110,14 +110,14 @@ services:
 
   api:
     build:
-      context: ./api
+      context: ../gympro-api
       dockerfile: Dockerfile
       provenance: false
     restart: unless-stopped
     mem_limit: 1536m
     env_file:
-      - ./api/.env.example
-      - path: ./api/.env
+      - ../gympro-api/.env.example
+      - path: ../gympro-api/.env
         required: false
     environment:
       MONGO_URI:          mongodb://mongo:27017/gymdb
@@ -172,7 +172,7 @@ services:
 
   web:
     build:
-      context: ./web
+      context: ../gympro-web
       dockerfile: Dockerfile
       args:
         REACT_APP_API_URL: /api
