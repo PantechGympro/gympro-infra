@@ -2,14 +2,14 @@
 #
 # Por qué un archivo separado y no un override de docker-compose.yml:
 # Compose namespacea contenedores, redes y VOLÚMENES por "nombre de proyecto".
-# docker-compose.yml fija ese nombre en "sistemagym" (ver el `name:` de ese
-# archivo) — de ahí que sus volúmenes reales sean sistemagym_pg_data,
-# sistemagym_mongo_data, etc. Este archivo fija un nombre de proyecto
+# docker-compose.yml fija ese nombre en "gympro" (ver el `name:` de ese
+# archivo) — de ahí que sus volúmenes reales sean gympro_pg_data,
+# gympro_mongo_data, etc. Este archivo fija un nombre de proyecto
 # DISTINTO, "gympro-server", así que aunque reutilice los mismos nombres de
 # volumen lógicos (pg_data, mongo_data...) Docker los crea como
 # gympro-server_pg_data, gympro-server_mongo_data... — completamente
 # independientes de los del stack de desarrollo. Se puede levantar este
-# archivo en la misma máquina que ya tiene "sistemagym" corriendo (para
+# archivo en la misma máquina que ya tiene "gympro" corriendo (para
 # probarlo en local antes de subirlo al VPS) sin arriesgar un solo byte de
 # los datos de desarrollo.
 #
@@ -127,7 +127,6 @@ services:
       POSTGRES_USER:      ${POSTGRES_USER:-gymuser}
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD:-gympassword}
       POSTGRES_DB:        ${POSTGRES_DB:-gymprodb}
-      SPARK_ENABLED:      "false"
       WEB_CONCURRENCY:    "2"
       GUNICORN_THREADS:   "4"
       PYTHONUNBUFFERED:   "1"
