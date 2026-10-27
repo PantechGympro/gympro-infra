@@ -24,13 +24,14 @@
 #
 # ── Nombre explícito del proyecto ────────────────────────────────────────────
 # Sin esto, Compose deriva el nombre del proyecto del nombre de la carpeta
-# (ej. "SistemaGYM", "sistemagym-saas", "saas" según cómo cada quien clonó el
+# (ej. "gympro-infra", "GymPro", "infra" según cómo cada quien clonó el
 # repo). Eso namespacea contenedores/redes/volúmenes de forma distinta en cada
 # máquina y es la causa típica de colisiones de puertos con contenedores
 # sueltos de otros proyectos (redis, mongo) que alguien más pueda tener
 # corriendo. Fijar el nombre aquí garantiza el mismo namespace siempre:
-# contenedores como "sistemagym-api-1", red "sistemagym_gympro", etc.
-name: sistemagym
+# contenedores como "gympro-api-1", red "gympro_gympro", etc. (nombre de
+# proyecto en minúsculas: Compose no acepta mayúsculas en `name:`).
+name: gympro
 
 services:
 
@@ -130,7 +131,6 @@ services:
       POSTGRES_USER:      ${POSTGRES_USER:-gymuser}
       POSTGRES_PASSWORD:  ${POSTGRES_PASSWORD:-gympassword}
       POSTGRES_DB:        ${POSTGRES_DB:-gymprodb}
-      SPARK_ENABLED:      "true"
       PYTHONUNBUFFERED:   "1"
       OLLAMA_BASE_URL:    http://ollama:11434
       OLLAMA_MODEL:       ${OLLAMA_MODEL:-phi3:mini}
