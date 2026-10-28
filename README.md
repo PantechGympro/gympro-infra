@@ -70,11 +70,61 @@ de los servicios.
 Los volúmenes nombrados de Docker (`pg_data`, `mongo_data`, etc.) están atados al
 **nombre del proyecto de Compose** (`name:` dentro de `docker-compose.server.yml`), no a
 la ruta donde vive el archivo. Si se clona este repo en una ubicación nueva del VPS
-(por ejemplo, al migrar desde el monorepo original), mantener el mismo `name:` reconecta
+(por ejemplo, al mover la ruta de despliegue en el VPS), mantener el mismo `name:` reconecta
 automáticamente a los mismos volúmenes con los mismos datos — no hace falta migrar nada.
 Cambiar ese valor por accidente crea volúmenes nuevos y vacíos.
 
 ---
+
+---
+
+## Flujo de trabajo
+
+| Rama | Para qué |
+|---|---|
+| `dev-miguel`, `dev-francisco`, `dev-maximiliano`, `dev-carlos` | Trabajo diario; una por integrante |
+| `main` | Rama integrada. **Protegida**: no admite push directo |
+| `qa` | Verificación antes de preparar la entrega |
+| `staging` | Preproducción |
+| `prod` | Lo que corre en el servidor. **Protegida** |
+
+1. Trabaja en tu rama `dev-<nombre>`; nunca directamente sobre `main`.
+2. Abre un pull request hacia `main` y completa la plantilla
+   (`.github/PULL_REQUEST_TEMPLATE.md`).
+3. La integración continua (`.github/workflows/ci.yml`) debe pasar en verde y el PR
+   necesita la aprobación de otro integrante.
+4. Al fusionar, el workflow `sync-dev-branches.yml` baja `main` a las cuatro ramas
+   `dev-*` automáticamente. Si hay conflicto se detiene y lo reporta; se resuelve a
+   mano:
+
+   ```bash
+   git checkout dev-<nombre>
+   git merge main       # resolver los conflictos
+   git push
+   ```
+
+5. La promoción entre ambientes sigue `main → qa → staging → prod`.
+
+### Convención de commits
+
+Conventional Commits, con alcance opcional entre paréntesis:
+
+| Prefijo | Para qué |
+|---|---|
+| `feat:` | Funcionalidad nueva |
+| `fix:` | Corrección de un bug |
+| `chore:` | Mantenimiento, configuración, dependencias |
+| `docs:` | Solo documentación |
+| `refactor:` | Cambio de estructura sin cambiar comportamiento |
+| `perf:` | Mejora de rendimiento |
+
+Ejemplos: `feat(api): cobro recurrente con Mercado Pago`, `fix(mobile): sesión no se renueva`.
+
+**Nunca se commitean secretos ni archivos `.env`.** El repositorio versiona únicamente
+`.env.example`; los valores reales se mantienen fuera de git.
+
+La documentación del proyecto se lleva en **Jira** (proyecto `SCRUM`): los entregables y
+las decisiones técnicas se adjuntan o se enlazan desde la incidencia que les corresponde.
 
 ## Carpetas `backups/` y `uploads/`
 
