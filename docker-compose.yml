@@ -105,6 +105,62 @@ services:
     networks:
       - gympro
 
+  # ── MinIO — almacenamiento de objetos S3-compatible (imagenes/video) ───────
+  # Pedido del gym (nov/2026): reemplaza, SOLO para subidas nuevas, el patron
+  # de guardar imagenes/video como base64 directo en Mongo/Postgres (ver
+  # Ejercicio.imagenes/Ejercicio.video, Miembro.foto_perfil, etc.) -- eso
+  # infla las bases de datos y no escala. Lo que ya esta guardado como
+  # base64 NO se migra aqui; el consumidor inicial es la biblioteca de
+  # ejercicios del entrenador (ver app/utils/object_storage.py en la API).
+  #
+  # ⚠ Imagen "minio/minio" (Docker Hub): MinIO retiro sus propias imagenes
+  # del Docker Hub en sep/2026 (cambio de licenciamiento hacia su producto
+  # de paga "AIStor") -- "docker pull minio/minio" ahora responde "pull
+  # access denied" aunque el repo nunca fue privado, y quay.io/minio/minio
+  # tambien dejo de servir tags nuevos. Se usa en su lugar el mismo binario
+  # de MinIO re-empaquetado por Chainguard (cgr.dev/chainguard/minio), que
+  # SI sigue siendo el MinIO real (mismo API S3, mismas variables
+  # MINIO_ROOT_USER/MINIO_ROOT_PASSWORD) -- no un fork con comportamiento
+  # distinto. Dos diferencias de esa imagen que ya estan resueltas abajo:
+  #   1. Corre como el usuario 65532 (no root) -- de ahi el servicio
+  #      "minio-init", que ajusta el owner del volumen ANTES de que minio
+  #      arranque (si no, falla con "Unable to initialize backend").
+  #   2. No trae mc/curl/wget adentro -- no hay healthcheck de contenedor;
+  #      "api" depende de "service_started", no "service_healthy". No es
+  #      un problema real: la subida a MinIO ya es no-bloqueante por diseño
+  #      (ver app/utils/object_storage.py -- si falla, cae a base64 inline).
+  # El plan gratuito de Chainguard solo publica el tag "latest" (sin tags
+  # versionados) -- si en el futuro se necesita reproducibilidad exacta,
+  # fijar la imagen por digest en vez de por tag.
+  #
+  # Consola web en MINIO_CONSOLE_HOST_PORT (login con MINIO_ROOT_USER /
+  # MINIO_ROOT_PASSWORD) para inspeccionar el bucket manualmente en dev.
+  minio-init:
+    image: busybox:1.36
+    command: ["sh", "-c", "chown -R 65532:65532 /data"]
+    volumes:
+      - minio_data:/data
+    networks:
+      - gympro
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER:     ${MINIO_ROOT_USER:-gympro_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-gympro_dev_secret}
+    volumes:
+      - minio_data:/data
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - gympro
+    ports:
+      - "${MINIO_HOST_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_HOST_PORT:-9001}:9001"
+
   # ── API Flask + Gunicorn ─────────────────────────────────────────────────────
   api:
     build:
@@ -134,6 +190,12 @@ services:
       PYTHONUNBUFFERED:   "1"
       OLLAMA_BASE_URL:    http://ollama:11434
       OLLAMA_MODEL:       ${OLLAMA_MODEL:-phi3:mini}
+      # ── MinIO (almacenamiento de imagenes/video) ─────────────────────────
+      MINIO_ENDPOINT:      http://minio:9000
+      MINIO_PUBLIC_URL:    ${MINIO_PUBLIC_URL:-http://localhost:${MINIO_HOST_PORT:-9000}}
+      MINIO_ROOT_USER:     ${MINIO_ROOT_USER:-gympro_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-gympro_dev_secret}
+      MINIO_BUCKET:        ${MINIO_BUCKET:-gympro-media}
       # ── Zona horaria ────────────────────────────────────────────────────
       # TZ hace que datetime.now() devuelva la hora local del gimnasio en vez
       # de UTC. Sin esto, un movimiento hecho por la noche se guardaba con la
@@ -159,6 +221,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started  # la imagen de minio no trae healthcheck -- ver nota arriba
       ollama:
         condition: service_started  # No service_healthy: la API verifica Ollama en cada request
     healthcheck:
@@ -263,6 +327,8 @@ volumes:
   pg_data:
     driver: local
   ollama_models:
+    driver: local
+  minio_data:
     driver: local
 
 # ── Red interna ────────────────────────────────────────────────────────────────
