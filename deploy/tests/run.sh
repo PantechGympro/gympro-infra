@@ -57,6 +57,11 @@ espera "URL pública caída con PUBLIC_STRICT=1 (prod) → exit 1" test $? -eq 1
 CURL_FALLA=1 SIM=sano PUBLIC_URLS="https://publica.test" PUBLIC_STRICT=0 bash "$SCRIPTS/post-deploy-check.sh" staging 5 >/dev/null 2>&1
 espera "URL pública caída con PUBLIC_STRICT=0 (staging) solo avisa" test $? -eq 0
 
+# Regresión: el runner del VPS arranca sin HOME y `set -u` abortaba lib.sh (HOME: unbound variable)
+SIM=sano GYMPRO_ROOT="" env -u HOME -u GYMPRO_ROOT PATH="$PATH" SIM="sano" SIM_LOG="$SIM_LOG" SIM_BODY="$SIM_BODY" PUBLIC_URLS="" \
+  bash "$SCRIPTS/post-deploy-check.sh" staging 5 >"$T/sinhome.out" 2>&1
+espera "sin variable HOME no aborta por 'unbound variable'" bash -c '! grep -q "unbound variable" "$1"' _ "$T/sinhome.out"
+
 echo "snapshot + rollback"
 SIM=sano bash "$SCRIPTS/rollback.sh" staging gympro-api >/dev/null 2>&1; espera "rollback sin snapshot → exit 2" test $? -eq 2
 echo v1 > "$T/root/gympro-api/app.txt"; echo abcdef1234567890 > "$T/root/gympro-api/BUILD_INFO"; echo secreto > "$T/root/gympro-api/.env"
@@ -85,6 +90,9 @@ import json; t=json.load(open('$SIM_BODY'))['text']
 assert 'revirtió' in t and 'prod' in t and 'gympro-api' in t and '01234567' in t, t"
 DEPLOY_WEBHOOK_URL=https://hooks.test/x CURL_FALLA=1 DEPLOY_STATUS=fallo bash "$SCRIPTS/notify.sh" >/dev/null 2>&1
 espera "si el webhook falla, notify NO hace fallar el despliegue" test $? -eq 0
+SUMM="$T/notify-summary.md"; : > "$SUMM"
+GITHUB_STEP_SUMMARY="$SUMM" DEPLOY_ENV=staging DEPLOY_REPO=gympro-infra DEPLOY_STATUS=fallo bash "$SCRIPTS/notify.sh" >/dev/null 2>&1
+espera "el resumen del job usa saltos de línea reales (sin \\n literal)" bash -c '! grep -qF "\\n" "$1" && [ "$(wc -l < "$1")" -ge 5 ]' _ "$SUMM"
 
 echo; echo "$((N-FALLAS))/$N pruebas correctas"
 [ "$FALLAS" -eq 0 ]
