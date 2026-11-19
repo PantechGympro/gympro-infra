@@ -1,12 +1,30 @@
 name: CI
 
+# Reutilizable (`workflow_call`): los despliegues de infra lo invocan como gate.
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
+  scripts-de-despliegue:
+    name: Scripts de despliegue (shellcheck + pruebas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck -S warning deploy/scripts/*.sh deploy/tests/run.sh
+      - name: Pruebas de post-deploy-check, rollback, snapshot y notify (docker/curl simulados)
+        run: bash deploy/tests/run.sh
+      - name: Pruebas de las métricas DORA
+        run: python3 -m unittest deploy/tests/test_dora.py -v
+
+
   validate-compose:
     runs-on: ubuntu-latest
     steps:
