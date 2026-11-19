@@ -35,6 +35,9 @@ while [ $# -gt 0 ]; do case "$1" in -d) printf '%s' "$2" > "$SIM_BODY"; shift 2 
 CURL
 chmod +x "$T/bin/docker" "$T/bin/curl"
 export ROLLBACK_VERIFY_TIMEOUT=5
+# Los scripts escriben tablas en $GITHUB_STEP_SUMMARY; en las pruebas se redirige a un archivo
+# temporal para que los escenarios simulados (incluidas las fallas) no aparezcan en el resumen del job.
+export GITHUB_STEP_SUMMARY="$T/step-summary.md"
 export PATH="$T/bin:$PATH" SIM_LOG="$T/log" SIM_BODY="$T/body" GYMPRO_ROOT="$T/root" PUBLIC_URLS=""
 
 echo "post-deploy-check"
