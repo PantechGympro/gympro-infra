@@ -23,7 +23,10 @@ json_str() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
 cuerpo="{\"text\":\"$(json_str "$texto")\",\"content\":\"$(json_str "$texto")\"}"
 
 echo "$texto"
-[ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf '### %s\n\n%s\n' "$icono $titulo" "- Repo: \`$repo\`  \n- Ambiente: \`$env_\`  \n- Commit: \`$sha\`  \n- Ejecución: $run_url" >> "$GITHUB_STEP_SUMMARY"
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+  printf '### %s\n\n- Repo: `%s`\n- Ambiente: `%s`\n- Commit: `%s`\n- Ejecución: %s\n' \
+    "$icono $titulo" "$repo" "$env_" "$sha" "$run_url" >> "$GITHUB_STEP_SUMMARY"
+fi
 
 if [ -z "${DEPLOY_WEBHOOK_URL:-}" ]; then
   echo "DEPLOY_WEBHOOK_URL no configurado: solo se escribió el resumen del job."
