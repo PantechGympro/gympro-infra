@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verificar horario permitido (gimnasio cerrado)
+        run: bash "$GITHUB_WORKSPACE/deploy/scripts/verificar-horario.sh"
+
       - name: Asegurar rsync en el runner
         run: command -v rsync >/dev/null || (apt-get update && apt-get install -y rsync)
 
