@@ -1,0 +1,23 @@
+# Monitoreo externo opcional (SCRUM-182). Uptime Kuma vigila las URLs públicas y avisa
+# por correo/Telegram/Slack/Discord cuando algo cae, independiente de GitHub Actions.
+#
+#   docker compose -p gympro-monitoring -f docker-compose.monitoring.yml up -d
+#
+# Solo escucha en loopback: accede por túnel SSH  (ssh -L 3001:127.0.0.1:3001 usuario@vps)
+# o publícalo detrás del nginx del host con autenticación. Monitores recomendados (en la UI):
+#   · HTTP  https://api.gympro.lat/api/health/ready   cada 60 s, palabra clave "ready"
+#   · HTTP  https://gympro.lat                          cada 60 s
+#   · Certificado TLS de gympro.lat y api.gympro.lat    alerta a 14 días de caducar
+#   · Opcional: https://test.gympro.lat (staging)
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    mem_limit: 256m
+    ports:
+      - "127.0.0.1:${KUMA_HOST_PORT:-3001}:3001"
+    volumes:
+      - kuma_data:/app/data
+
+volumes:
+  kuma_data:

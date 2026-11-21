@@ -1,0 +1,46 @@
+name: Métricas DORA
+
+# Resume cada semana qué tan seguido, qué tan rápido y con cuánto riesgo se
+# despliega GymPro (SCRUM-182: métricas). También se puede lanzar a mano.
+on:
+  schedule:
+    - cron: "17 14 * * 1"     # lunes 14:17 UTC (08:17 CDMX)
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: "Ventana de análisis en días"
+        default: "30"
+      workflow:
+        description: "Workflow de despliegue a medir (deploy-prod.yml | deploy-staging.yml)"
+        default: "deploy-prod.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  dora:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Calcular métricas
+        env:
+          # GITHUB_TOKEN solo ve ESTE repo. Para leer gympro-api y gympro-web crea el
+          # secreto METRICS_TOKEN (PAT de solo lectura de "Actions" en esos repos).
+          GH_TOKEN: ${{ secrets.METRICS_TOKEN || github.token }}
+          DIAS: ${{ inputs.dias || '30' }}
+          WORKFLOW: ${{ inputs.workflow || 'deploy-prod.yml' }}
+        run: |
+          python3 deploy/scripts/dora.py --owner "${{ github.repository_owner }}" \
+            --workflow "$WORKFLOW" --days "$DIAS" --json dora.json | tee dora.md
+          cat dora.md >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "${{ secrets.METRICS_TOKEN }}" ]; then
+            echo "> ⚠️ Sin secreto METRICS_TOKEN: los repos gympro-api y gympro-web pueden salir vacíos." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metricas-dora
+          path: |
+            dora.json
+            dora.md
+          retention-days: 90
