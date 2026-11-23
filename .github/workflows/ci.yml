@@ -16,7 +16,7 @@ jobs:
     name: Scripts de despliegue (shellcheck + pruebas)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: shellcheck
         run: shellcheck -S warning deploy/scripts/*.sh deploy/tests/run.sh
       - name: Pruebas de post-deploy-check, rollback, snapshot y notify (docker/curl simulados)
@@ -28,7 +28,7 @@ jobs:
   validate-compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Validar sintaxis YAML de los compose
         run: |
